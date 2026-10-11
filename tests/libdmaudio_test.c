@@ -52,6 +52,40 @@ DMOD_TEST_STEP(same_format_is_copied)
     libdmaudio_close(s);
 }
 
+DMOD_TEST_STEP(the_ring_wraps_and_runs_dry)
+{
+    DMOD_TEST_EXPECT_NOT_NULL(device(&STEREO16_48K));
+    libdmaudio_stream_options_t options = { .buffer_ms = 1, .volume_percent = 100 };   /* 48 frames */
+    int status = -1;
+    libdmaudio_stream_t s = libdmaudio_open("test", &STEREO16_48K, &options, &status);
+    DMOD_TEST_EXPECT_NOT_NULL(s);
+    bool same = true;
+    for (int round = 0; round < 10; round++)
+    {
+        /* 40 frames at a time: they go round the ring's end */
+        for (int i = 0; i < 80; i++)
+            g_in[i] = (int16_t)(round * 1000 + i * 7 - 300);
+        DMOD_TEST_EXPECT_EQ(libdmaudio_write(s, g_in, 40, 0), 40);
+        DMOD_TEST_EXPECT_EQ(libdmaudio_device_mix(g_dev, g_out, 40), 1);
+        same = same && memcmp(g_in, g_out, 80 * sizeof(int16_t)) == 0;
+    }
+    DMOD_TEST_EXPECT_TRUE(same);
+
+    /* 10 frames, 30 asked: the rest is silence, one underrun */
+    DMOD_TEST_EXPECT_EQ(libdmaudio_write(s, g_in, 10, 0), 10);
+    DMOD_TEST_EXPECT_EQ(libdmaudio_device_mix(g_dev, g_out, 30), 1);
+    bool silent = true;
+    for (int i = 20; i < 60; i++)
+        silent = silent && g_out[i] == 0;
+    DMOD_TEST_EXPECT_TRUE(memcmp(g_in, g_out, 20 * sizeof(int16_t)) == 0);
+    DMOD_TEST_EXPECT_TRUE(silent);
+    libdmaudio_stream_status_t st;
+    DMOD_TEST_EXPECT_EQ(libdmaudio_get_status(s, &st), 0);
+    DMOD_TEST_EXPECT_EQ(st.underruns, 1u);
+    DMOD_TEST_EXPECT_EQ(st.played_frames, 410u);
+    libdmaudio_close(s);
+}
+
 DMOD_TEST_STEP(silence_without_streams)
 {
     DMOD_TEST_EXPECT_NOT_NULL(device(&STEREO16_48K));
