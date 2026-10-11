@@ -19,7 +19,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Build dmaudio
+      - name: Clear the dmf-get cache
+        run: |
+          # The image may carry manifests cached before the versions it needs
+          dmf-get --clear-cache
+
+      - name: Build libdmaudio, dmaudio and the tools
         run: |
           mkdir -p build
           cd build
@@ -30,13 +35,14 @@ jobs:
         run: |
           echo "Checking for module files..."
           ls -lh build/dmf/
-          test -f build/dmf/dmaudio.dmf
-          test -f build/dmf/dmaudio_version.txt
-          test -f build/dmf/test_dmaudio.dmf
+          for m in libdmaudio dmaudio audiotone audioplay audioctl test_libdmaudio; do
+            test -f build/dmf/$m.dmf
+          done
+          test -f build/dmf/libdmaudio_version.txt
           echo "Module files present"
 
       - name: Run tests with dmod_loader
         run: |
           export DMOD_DMF_DIR=$(pwd)/build/dmf
-          dmf-get install -d ${DMOD_DMF_DIR}/test_dmaudio-local.dmd -y
-          dmod_loader build/dmf/test_dmaudio.dmf
+          dmf-get install -d ${DMOD_DMF_DIR}/test_libdmaudio-local.dmd -y
+          dmod_loader build/dmf/test_libdmaudio.dmf

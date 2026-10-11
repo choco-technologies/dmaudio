@@ -15,7 +15,7 @@ include $(DMOD_DIR)/paths.mk
 # -----------------------------------------------------------------------------
 
 # The name of the module
-DMOD_MODULE_NAME=dmaudio
+DMOD_MODULE_NAME=libdmaudio
 
 # The version of the module
 DMOD_MODULE_VERSION=0.1
@@ -24,13 +24,13 @@ DMOD_MODULE_VERSION=0.1
 DMOD_AUTHOR_NAME=Patryk Kubiak
 
 # The list of C sources
-DMOD_CSOURCES=src/dmaudio.c
+DMOD_CSOURCES=src/registry.c src/mix.c src/convert.c src/serve.c
 
 # The list of C++ sources
 DMOD_CXXSOURCES=
 
 # The list of include directories
-DMOD_INC_DIRS=
+DMOD_INC_DIRS=include src
 
 # The list of libraries to link
 DMOD_LIBS=
@@ -46,4 +46,4 @@ DMOD_MAL_IMPLS=
 # -----------------------------------------------------------------------------
 #   Include the dmod app makefile
 # -----------------------------------------------------------------------------
-include $(DMOD_DMF_APP_FILE_PATH)
+include $(DMOD_DMF_LIB_FILE_PATH)

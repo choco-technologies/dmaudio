@@ -1,14 +1,12 @@
 # dmaudio Documentation
 
-Welcome to the dmaudio module documentation.
-
 ## Contents
 
-- **[api-reference.md](api-reference.md)** - Command-line usage and behavior
+- **[api-reference.md](api-reference.md)** - libdmaudio: streams, devices, serving a device, the tools
 
 View documentation using `dmf-man`:
 
 ```bash
-dmf-man dmaudio          # Main documentation
-dmf-man dmaudio api      # API reference
+dmf-man libdmaudio          # Main documentation
+dmf-man libdmaudio api      # API reference
 ```

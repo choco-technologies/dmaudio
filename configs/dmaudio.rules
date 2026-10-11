@@ -1,0 +1,10 @@
+; dmaudio.rules - libsystemd device rule.
+;
+; Every node dmdevfs reports as "audio" (it answers the standard audio
+; ioctls - see dmdevfs' "libsystemd Device Reporting") gets its own
+; dmaudio@<name> instance, instantiated on demand from dmaudio@.ini.
+;
+; Load with libsystemd_load_rules() on the directory this file lives in -
+; see dmsystem's docs/configuration.md ("Device rules").
+[class=audio]
+start=dmaudio@%name
