@@ -76,6 +76,23 @@ void read_frame(const libdmaudio_format_t* from, const uint8_t* src, uint8_t to_
 void write_frames(const libdmaudio_format_t* to, const int32_t* in, uint32_t frames, uint8_t* dst)
 {
     uint32_t samples = frames * to->channels;
+#if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+    if (to->format == DMDRVI_AUDIO_FORMAT_S16_LE && ((uintptr_t)dst & 1u) == 0u)
+    {
+        /* The usual device: 16-bit samples, written as they are (little endian) */
+        int16_t* out = (int16_t*)dst;
+        for (uint32_t i = 0; i < samples; i++)
+        {
+            int32_t v = in[i];
+            if (v > Q24_MAX)
+                v = Q24_MAX;
+            else if (v < Q24_MIN)
+                v = Q24_MIN;
+            out[i] = (int16_t)(v >> 8);
+        }
+        return;
+    }
+#endif
     for (uint32_t i = 0; i < samples; i++)
     {
         int32_t v = in[i];
