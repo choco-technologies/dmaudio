@@ -1,4 +1,4 @@
-# DMOD Resource File for dmaudio
+# DMOD Resource File for libdmaudio (the mixer)
 # This file specifies where resources should be installed
 
 # === Core Module ===
@@ -22,7 +22,7 @@ docs=./docs => ${destination}/${module}/docs [origin=${repo_dir}/docs]
 readme=./README.md => ${destination}/${module}/README.md [origin=${repo_dir}/README.md]
 
 # === Header Files ===
-# Include directory with all headers (public header + generated <module>_defs.h)
+# Public headers (libdmaudio.h, libdmaudio_types.h) + generated libdmaudio_defs.h
 inc=./include => ${destination}/${module}/include [origin=${repo_dir}/include] [origin=${build_dir}/${module}_defs.h]
 
 # === License ===

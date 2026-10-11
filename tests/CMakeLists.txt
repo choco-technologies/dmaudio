@@ -1,15 +1,27 @@
-set(DMOD_MODULE_NAME        test_dmaudio)
+# ======================================================================
+#               test_libdmaudio
+# ======================================================================
+# The mixer without a node: a device registered by the test, its streams
+# mixed with libdmaudio_device_mix().
+set(DMOD_MODULE_NAME        test_libdmaudio)
 set(DMOD_MODULE_VERSION     ${PROJECT_VERSION})
 set(DMOD_AUTHOR_NAME        "Patryk Kubiak")
-set(DMOD_STACK_SIZE         1024)
+set(DMOD_STACK_SIZE         4096)
 set(DMOD_PRIORITY           0)
 
 dmod_add_test(${DMOD_MODULE_NAME} ${DMOD_MODULE_VERSION}
-    dmaudio_test.c
+    libdmaudio_test.c
 )
 
-# Register the test module with ctest - this replays the same two steps CI
-# runs (see .github/templates/ci.yml.template): install the test module's
+dmod_link_modules(${DMOD_MODULE_NAME}
+    dmdrvi@>=2.7
+)
+
+target_link_libraries(${DMOD_MODULE_NAME}
+    libdmaudio_if
+)
+
+# Register the test module with ctest - the same two steps as CI: install its
 # dependencies with dmf-get, then execute it through dmod_loader. The test's
 # exit code equals its number of failed steps (see dmod_add_test).
 find_program(DMF_GET_EXECUTABLE dmf-get HINTS ${DMOD_TOOLS_BIN_DIR} PATHS ENV PATH)

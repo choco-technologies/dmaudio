@@ -1,5 +1,9 @@
 # Include dynamically generated versions list from latest release
 $include https://github.com/choco-technologies/dmaudio/releases/download/vlatest/versions.dmm
 
-# Module entry with version placeholder - expanded by $version-available
+# Module entries with version placeholder - will be expanded by $version-available
+libdmaudio https://github.com/choco-technologies/dmaudio/releases/download/v<version>/libdmaudio-v<version>-<arch_name>.zip
 dmaudio https://github.com/choco-technologies/dmaudio/releases/download/v<version>/dmaudio-v<version>-<arch_name>.zip
+audiotone https://github.com/choco-technologies/dmaudio/releases/download/v<version>/audiotone-v<version>-<arch_name>.zip
+audioplay https://github.com/choco-technologies/dmaudio/releases/download/v<version>/audioplay-v<version>-<arch_name>.zip
+audioctl https://github.com/choco-technologies/dmaudio/releases/download/v<version>/audioctl-v<version>-<arch_name>.zip

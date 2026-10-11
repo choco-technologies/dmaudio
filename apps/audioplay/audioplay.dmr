@@ -1,0 +1,14 @@
+# DMOD Resource File for audioplay (plays a WAV file through libdmaudio)
+# This file specifies where resources should be installed
+
+# === Core Module ===
+dmf=./${module}.dmf => ${destination}/${module}.dmf [origin=${dmf_dir}/${module}.dmf]
+dmfc=./${module}.dmfc => ${destination}/${module}.dmfc [origin=${build_dir}/dmfc/${module}.dmfc]
+dmd=./${module}.dmd => ${destination}/${module}.dmd [origin=${dmf_dir}/${module}.dmd]
+version=./${module}_version.txt => ${destination}/${module}_version.txt [origin=${dmf_dir}/${module}_version.txt]
+
+# === License ===
+license=./LICENSE => ${destination}/${module}/LICENSE [origin=${repo_dir}/LICENSE]
+
+# Adding itself
+dmr=./${module}.dmr => ${destination}/${module}/${module}.dmr [origin=${repo_dir}/apps/audioplay/${module}.dmr]
