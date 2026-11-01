@@ -9,7 +9,10 @@
  * Usage: audioctl [list]
  *        audioctl volume [DEVICE] PERCENT
  *        audioctl mute|unmute [DEVICE]
+ *        audioctl output [DEVICE] headphone|speaker|line
  */
+
+static const char* const OUTPUTS[] = { "headphone", "speaker", "line" };
 
 static const char* format_name(dmdrvi_audio_format_t f)
 {
@@ -31,10 +34,11 @@ static int list(void)
         libdmaudio_device_info_t info;
         if (libdmaudio_device_info(name, &info) != 0)
             continue;
-        Dmod_Printf("%-12s %6lu Hz %u ch %s  volume %3u%%%s  %lu stream(s)  %s\n", info.name,
+        const char* output = ((uint32_t)info.output < 3u) ? OUTPUTS[info.output] : "?";
+        Dmod_Printf("%-12s %6lu Hz %u ch %s  %-9s  volume %3u%%%s  %lu stream(s)  %s\n", info.name,
                     (unsigned long)info.format.sample_rate_hz, (unsigned)info.format.channels,
-                    format_name(info.format.format), (unsigned)info.volume_percent, info.muted ? " muted" : "",
-                    (unsigned long)info.streams, info.running ? "playing" : "idle");
+                    format_name(info.format.format), output, (unsigned)info.volume_percent,
+                    info.muted ? " muted" : "", (unsigned long)info.streams, info.running ? "playing" : "idle");
     }
     if (i == 0)
         Dmod_Printf("audioctl: no audio device is served (is dmaudio running?)\n");
@@ -62,11 +66,18 @@ int main(int argc, char* argv[])
     }
     else if ((strcmp(cmd, "mute") == 0 || strcmp(cmd, "unmute") == 0) && argc <= 3)
         ret = libdmaudio_device_set_mute((argc == 3) ? argv[2] : NULL, cmd[0] == 'm');
+    else if (strcmp(cmd, "output") == 0 && (argc == 3 || argc == 4))
+    {
+        for (uint32_t i = 0; i < 3u; i++)
+            if (strcmp(argv[argc - 1], OUTPUTS[i]) == 0)
+                ret = libdmaudio_device_set_output((argc == 4) ? argv[2] : NULL, (dmdrvi_audio_output_t)i);
+    }
     else
     {
         Dmod_Printf("Usage: audioctl [list]\n"
                     "       audioctl volume [DEVICE] PERCENT\n"
-                    "       audioctl mute|unmute [DEVICE]\n");
+                    "       audioctl mute|unmute [DEVICE]\n"
+                    "       audioctl output [DEVICE] headphone|speaker|line\n");
         return -EINVAL;
     }
     if (ret == -ENODEV)

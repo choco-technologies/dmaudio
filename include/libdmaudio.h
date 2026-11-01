@@ -102,6 +102,19 @@ dmod_libdmaudio_api(1.0, int, _device_set_volume, ( const char* device, uint8_t 
 /** @brief Mute a device or turn it up again. */
 dmod_libdmaudio_api(1.0, int, _device_set_mute, ( const char* device, bool muted ));
 
+/**
+ * @brief Switch the analog output of a device (headphone, speaker, line)
+ *        while it is served.
+ *
+ * The service stops the node, configures it again with the new output and
+ * goes on; streams keep playing after a short gap. An output the node
+ * refuses is reported in the log and the previous one stays - see
+ * libdmaudio_device_info().
+ *
+ * @return 0, -ENODEV, -EINVAL (not an output)
+ */
+dmod_libdmaudio_api(1.0, int, _device_set_output, ( const char* device, dmdrvi_audio_output_t output ));
+
 /* ---- Serving a device (the dmaudio service) ---- */
 
 /** @brief Default options of libdmaudio_serve(). */

@@ -161,6 +161,7 @@ dmod_libdmaudio_api_declaration(1.0, int, _device_info, ( const char* device, li
         info->volume_percent = d->volume;
         info->muted = d->muted;
         info->running = d->running;
+        info->output = d->output;
     }
     dmosi_mutex_unlock(g_lock);
     return (d != NULL) ? 0 : -ENODEV;
@@ -219,6 +220,21 @@ dmod_libdmaudio_api_declaration(1.0, int, _device_set_volume, ( const char* devi
 dmod_libdmaudio_api_declaration(1.0, int, _device_set_mute, ( const char* device, bool muted ))
 {
     return set_master(device, -1, muted ? 1 : 0);
+}
+
+dmod_libdmaudio_api_declaration(1.0, int, _device_set_output, ( const char* device, dmdrvi_audio_output_t output ))
+{
+    if (g_lock == NULL || (uint32_t)output > (uint32_t)DMDRVI_AUDIO_OUTPUT_LINE)
+        return -EINVAL;
+    dmosi_mutex_lock(g_lock);
+    struct libdmaudio_device* d = device_find(device);
+    if (d != NULL)
+    {
+        d->output = output;
+        d->settings++;
+    }
+    dmosi_mutex_unlock(g_lock);
+    return (d != NULL) ? 0 : -ENODEV;
 }
 
 dmod_libdmaudio_api_declaration(1.0, int, _device_wait, ( libdmaudio_device_t device, int32_t timeout_ms ))
