@@ -12,7 +12,6 @@
  *        audioctl output [DEVICE] headphone|speaker|line
  */
 
-static const char* const OUTPUTS[] = { "headphone", "speaker", "line" };
 
 static const char* format_name(dmdrvi_audio_format_t f)
 {
@@ -25,6 +24,18 @@ static const char* format_name(dmdrvi_audio_format_t f)
     }
 }
 
+/* (a switch, not a table of strings: a module's data is not relocated) */
+static const char* output_name(dmdrvi_audio_output_t o)
+{
+    switch (o)
+    {
+        case DMDRVI_AUDIO_OUTPUT_HEADPHONE: return "headphone";
+        case DMDRVI_AUDIO_OUTPUT_SPEAKER:   return "speaker";
+        case DMDRVI_AUDIO_OUTPUT_LINE:      return "line";
+        default:                            return "?";
+    }
+}
+
 static int list(void)
 {
     char name[32];
@@ -34,10 +45,9 @@ static int list(void)
         libdmaudio_device_info_t info;
         if (libdmaudio_device_info(name, &info) != 0)
             continue;
-        const char* output = ((uint32_t)info.output < 3u) ? OUTPUTS[info.output] : "?";
         Dmod_Printf("%-12s %6lu Hz %u ch %s  %-9s  volume %3u%%%s  %lu stream(s)  %s\n", info.name,
                     (unsigned long)info.format.sample_rate_hz, (unsigned)info.format.channels,
-                    format_name(info.format.format), output, (unsigned)info.volume_percent,
+                    format_name(info.format.format), output_name(info.output), (unsigned)info.volume_percent,
                     info.muted ? " muted" : "", (unsigned long)info.streams, info.running ? "playing" : "idle");
     }
     if (i == 0)
@@ -68,8 +78,8 @@ int main(int argc, char* argv[])
         ret = libdmaudio_device_set_mute((argc == 3) ? argv[2] : NULL, cmd[0] == 'm');
     else if (strcmp(cmd, "output") == 0 && (argc == 3 || argc == 4))
     {
-        for (uint32_t i = 0; i < 3u; i++)
-            if (strcmp(argv[argc - 1], OUTPUTS[i]) == 0)
+        for (uint32_t i = 0; i <= (uint32_t)DMDRVI_AUDIO_OUTPUT_LINE; i++)
+            if (strcmp(argv[argc - 1], output_name((dmdrvi_audio_output_t)i)) == 0)
                 ret = libdmaudio_device_set_output((argc == 4) ? argv[2] : NULL, (dmdrvi_audio_output_t)i);
     }
     else

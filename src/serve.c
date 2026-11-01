@@ -104,15 +104,16 @@ dmod_libdmaudio_api_declaration(1.0, int, _serve_parse, ( int argc, char* argv[]
 
 static bool start_node(serve_t* s);
 static void stop_node(serve_t* s);
-static int configure_node(void* node, const libdmaudio_serve_options_t* o, libdmaudio_format_t* format);
+static int configure_node(void* node, const libdmaudio_serve_options_t* o, libdmaudio_format_t* format, bool fixed_ok);
 
 /*
  * The node configured again for another output. A codec is reset by
  * CONFIGURE (and starts there), so it is stopped first and started again
  * after it - with the master volume. The mix stays in the format the device
  * was registered with: an output the node plays in another one is refused,
- * like one the node does not have, and the previous output is configured
- * back.
+ * like one the node does not have (-ENOTSUP - here not a node with a fixed
+ * format: that one has no output to switch), and the previous output is
+ * configured back.
  */
 static void switch_output(serve_t* s, dmdrvi_audio_output_t output)
 {
@@ -121,7 +122,7 @@ static void switch_output(serve_t* s, dmdrvi_audio_output_t output)
     stop_node(s);
     s->options->output = output;
     libdmaudio_format_t format;
-    int ret = configure_node(s->node, s->options, &format);
+    int ret = configure_node(s->node, s->options, &format, false);
     const libdmaudio_format_t* mix = &s->device->format;
     if (ret == 0 && (format.sample_rate_hz != mix->sample_rate_hz || format.channels != mix->channels ||
                      format.format != mix->format))
@@ -130,7 +131,7 @@ static void switch_output(serve_t* s, dmdrvi_audio_output_t output)
     {
         DMOD_LOG_ERROR("libdmaudio: %s cannot play through output %d (%d)\n", s->device->name, (int)output, ret);
         s->options->output = previous;
-        (void)configure_node(s->node, s->options, &format);
+        (void)configure_node(s->node, s->options, &format, true);
         dmosi_mutex_lock(g_lock);
         if (s->device->output == output)
             s->device->output = previous;
@@ -201,8 +202,9 @@ static bool start_node(serve_t* s)
     return true;
 }
 
-/* The node configured with the options (if it is not fixed), the format it runs at */
-static int configure_node(void* node, const libdmaudio_serve_options_t* o, libdmaudio_format_t* format)
+/* The node configured with the options (if it is not fixed - @p fixed_ok: -ENOTSUP is a node with a
+ * fixed format, not a refusal), the format it runs at */
+static int configure_node(void* node, const libdmaudio_serve_options_t* o, libdmaudio_format_t* format, bool fixed_ok)
 {
     dmdrvi_audio_config_t config = {
         .sample_rate_hz = o->sample_rate_hz,
@@ -213,7 +215,7 @@ static int configure_node(void* node, const libdmaudio_serve_options_t* o, libdm
         .muted = false,
     };
     int ret = Dmod_Ioctl(node, DMDRVI_IOCTL_AUDIO_CONFIGURE, &config);
-    if (ret != 0 && ret != -ENOTSUP)
+    if (ret != 0 && (ret != -ENOTSUP || !fixed_ok))
         return ret;
     if (ret == -ENOTSUP)
         DMOD_LOG_INFO("libdmaudio: the node keeps its own format\n");
@@ -254,7 +256,7 @@ dmod_libdmaudio_api_declaration(1.0, int, _serve, ( const char* name, const char
     }
 
     libdmaudio_format_t format;
-    int ret = configure_node(s.node, &o, &format);
+    int ret = configure_node(s.node, &o, &format, true);
     if (ret != 0)
     {
         DMOD_LOG_ERROR("libdmaudio: %s cannot play (%d)\n", node_path, ret);
