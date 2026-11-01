@@ -70,6 +70,7 @@ struct libdmaudio_device
     uint8_t                     volume;
     bool                        muted;
     uint32_t                    settings;       /* Changes with every request */
+    dmdrvi_audio_output_t       output;
     uint32_t                    soft_gain;      /* Q15 - the node has no volume: applied to the mix */
     bool                        running;
 };

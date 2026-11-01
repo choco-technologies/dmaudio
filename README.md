@@ -12,7 +12,7 @@ each audio device.
 | `dmaudio` | Service ([apps/dmaudio](apps/dmaudio)) | One instance per audio device: `libdmaudio_serve()` |
 | `audiotone` | Tool | Sine tones, one stream each |
 | `audioplay` | Tool | A WAV file (PCM, 16/24/32 bits, any rate, 1-8 channels) |
-| `audioctl` | Tool | The devices served: list, volume, mute |
+| `audioctl` | Tool | The devices served: list, volume, mute, output |
 
 The library is loaded once in the system and holds everything; the service
 is `main()` calling `libdmaudio_serve()` (under 1 kB) - there may be many
@@ -82,11 +82,26 @@ volume 70 %, which the unit's `args=` can change (`-r RATE -c CHANNELS
 -t TIMEOUT_MS`). A node with a fixed format (a bare SAI) keeps its own; the
 mix is made in whatever the node reports (`AUDIO_GET_STREAM`).
 
+[configs/speaker/dmaudio@.ini](configs/speaker/dmaudio@.ini) is the same
+unit with `-o speaker`; it installs as `dmaudio@.ini` too, so a firmware
+chooses the output with the file it takes:
+
+```
+dmaudio service=speaker/dmaudio@.ini
+dmaudio rules=dmaudio.rules
+```
+
+The output can be switched while the device is served -
+`audioctl output [DEVICE] headphone|speaker|line` or
+`libdmaudio_device_set_output()` (a settings menu): the service stops the
+node, configures it again and goes on, the streams keep playing after a
+short gap. While the device is idle the switch is made when it plays next.
+
 On the STM32F746G-DISCO (with dmsai and dmwm8994):
 
 ```
 stm32f746xg@/> audioctl
-wm8994        48000 Hz 2 ch s16  volume  70%  0 stream(s)  idle
+wm8994        48000 Hz 2 ch s16  headphone  volume  70%  0 stream(s)  idle
 stm32f746xg@/> audiotone -f 523 -f 659 -t 2
 audiotone: 523 Hz - 44100 frames played, 0 underruns
 audiotone: 659 Hz - 44100 frames played, 0 underruns
@@ -131,7 +146,7 @@ dmaudio/
 ├── apps/audiotone/             # tools
 ├── apps/audioplay/
 ├── apps/audioctl/
-├── configs/                    # dmaudio@.ini, dmaudio.rules
+├── configs/                    # dmaudio@.ini, speaker/dmaudio@.ini, dmaudio.rules
 ├── docs/
 └── tests/
 ```

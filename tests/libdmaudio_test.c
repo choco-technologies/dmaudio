@@ -288,6 +288,12 @@ DMOD_TEST_STEP(devices_by_name)
     DMOD_TEST_EXPECT_EQ(libdmaudio_device_set_volume("test", 40), 0);
     DMOD_TEST_EXPECT_EQ(libdmaudio_device_info("test", &info), 0);
     DMOD_TEST_EXPECT_EQ(info.volume_percent, 40);
+    DMOD_TEST_EXPECT_EQ(info.output, DMDRVI_AUDIO_OUTPUT_HEADPHONE);
+    DMOD_TEST_EXPECT_EQ(libdmaudio_device_set_output("test", DMDRVI_AUDIO_OUTPUT_SPEAKER), 0);
+    DMOD_TEST_EXPECT_EQ(libdmaudio_device_info("test", &info), 0);
+    DMOD_TEST_EXPECT_EQ(info.output, DMDRVI_AUDIO_OUTPUT_SPEAKER);
+    DMOD_TEST_EXPECT_EQ(libdmaudio_device_set_output("test", (dmdrvi_audio_output_t)7), -EINVAL);
+    DMOD_TEST_EXPECT_EQ(libdmaudio_device_set_output("nothing", DMDRVI_AUDIO_OUTPUT_LINE), -ENODEV);
     libdmaudio_close(s);
 }
 

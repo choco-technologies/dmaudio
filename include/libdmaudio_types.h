@@ -50,6 +50,7 @@ typedef struct
     uint8_t             volume_percent;
     bool                muted;
     bool                running;    /**< Its node plays (not idle) */
+    dmdrvi_audio_output_t output;   /**< The analog output it plays through */
 } libdmaudio_device_info_t;
 
 /** @brief Options of libdmaudio_serve(). */

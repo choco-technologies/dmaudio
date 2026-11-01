@@ -13,7 +13,7 @@ Errors are negative `errno` values.
 | `libdmaudio_format_t` | `sample_rate_hz` (1000 ... 384000), `channels` (1 ... `LIBDMAUDIO_MAX_CHANNELS` = 8, interleaved), `format` (`DMDRVI_AUDIO_FORMAT_S16_LE`, `_S24_IN32_LE`, `_S32_LE`) |
 | `libdmaudio_stream_options_t` | `buffer_ms` (0: `LIBDMAUDIO_DEFAULT_BUFFER_MS` = 200), `volume_percent` |
 | `libdmaudio_stream_status_t` | `buffered_frames`, `buffer_frames`, `played_frames`, `underruns`, `paused`, `orphaned` |
-| `libdmaudio_device_info_t` | `name`, `format` (of the mix), `streams`, `volume_percent`, `muted`, `running` |
+| `libdmaudio_device_info_t` | `name`, `format` (of the mix), `streams`, `volume_percent`, `muted`, `running`, `output` |
 | `libdmaudio_serve_options_t` | what `libdmaudio_serve()` asks of the node, `period_ms`, `idle_ms`, `timeout_ms` |
 
 ## Streams
@@ -61,6 +61,7 @@ yet is not running dry).
 | `libdmaudio_device_name(index, name, size)` | the `index`-th device served; `-ENOENT` past the last, `-ERANGE` |
 | `libdmaudio_device_set_volume(device, percent)` | master volume - the node's `AUDIO_SET_VOLUME`, or the mix |
 | `libdmaudio_device_set_mute(device, muted)` | the node's `AUDIO_SET_MUTE`, or the mix |
+| `libdmaudio_device_set_output(device, output)` | headphone, speaker or line: the node configured again (`AUDIO_CONFIGURE`) - when it plays next if it is idle; an output the node refuses is logged and the previous one stays (`info.output`); `-EINVAL` for no output |
 
 ## Serving a device
 
@@ -103,4 +104,4 @@ fail with `-ENODEV` until they are closed.
 | `dmaudio <name> [<node>] [options]` | the service (from `dmaudio@.ini`) |
 | `audiotone [-d DEVICE] [-f HZ]... [-t SECONDS] [-r RATE] [-v VOLUME]` | tones, each in a stream of its own, made at RATE (22050) mono |
 | `audioplay [-d DEVICE] [-v VOLUME] FILE.wav` | a PCM WAV file |
-| `audioctl [list]`, `audioctl volume [DEVICE] PERCENT`, `audioctl mute\|unmute [DEVICE]` | the devices served |
+| `audioctl [list]`, `audioctl volume [DEVICE] PERCENT`, `audioctl mute\|unmute [DEVICE]`, `audioctl output [DEVICE] headphone\|speaker\|line` | the devices served |
