@@ -79,6 +79,15 @@ its own), takes its format from `AUDIO_GET_STREAM`, registers the device
    which waits for room in its DMA buffers;
 3. after `idle_ms` of silence drains (`AUDIO_DRAIN`) and stops the node.
 
+Short writes are completed before another period is mixed. When a write makes
+no progress, the service stops the node without draining the failed stream,
+waits 100 ms and starts it again, restoring the current volume and mute. It
+retries the unwritten part of the same period, with at most three restarts
+per period. A device that remains stuck returns `-EIO` and the service releases
+its resources instead of repeatedly dropping PCM and logging every 10 ms.
+A stop request interrupts recovery and returns normally. Frames already
+queued in hardware may be lost when the node restarts.
+
 Returns 0 when stopped, `-ENODEV` (no node), `-EBUSY` (the name is served),
 `-ENOTSUP` (the node does not play, or reports a format the mixer cannot
 write) or the node's error.

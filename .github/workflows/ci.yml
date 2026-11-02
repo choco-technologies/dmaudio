@@ -28,7 +28,7 @@ jobs:
         run: |
           mkdir -p build
           cd build
-          cmake .. -DDMOD_MODE=DMOD_MODULE
+          cmake .. -DCMAKE_BUILD_TYPE=Release -DDMOD_MODE=DMOD_MODULE
           cmake --build .
 
       - name: Verify module files
@@ -40,6 +40,9 @@ jobs:
           done
           test -f build/dmf/libdmaudio_version.txt
           echo "Module files present"
+
+      - name: Run service recovery regressions
+        run: ctest --test-dir build -R '^test_serve_recovery$' --output-on-failure
 
       - name: Run tests with dmod_loader
         run: |

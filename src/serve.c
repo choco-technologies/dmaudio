@@ -11,6 +11,8 @@
  */
 
 #define IDLE_POLL_MS    100u    /* Stop requests are seen this fast while idle */
+#define WRITE_RESTARTS  3u
+#define RESTART_MS      100u
 
 typedef struct
 {
@@ -202,6 +204,51 @@ static bool start_node(serve_t* s)
     return true;
 }
 
+/* Keep the current period until it is written. A failed DMA stream must be
+ * stopped before START can clear its latched fault; draining it cannot help. */
+static int restart_node(serve_t* s, bool (*stop_requested)(void))
+{
+    int ret = Dmod_Ioctl(s->node, DMDRVI_IOCTL_AUDIO_STOP, NULL);
+    set_running(s, false);
+    if (ret != 0)
+        return ret;
+    dmosi_thread_sleep(RESTART_MS);
+    if (stop_requested())
+        return -ECANCELED;
+    return start_node(s) ? 0 : -EIO;
+}
+
+static int write_period(serve_t* s, const void* buffer, size_t bytes, bool (*stop_requested)(void))
+{
+    size_t offset = 0;
+    unsigned restarts = 0;
+    while (offset < bytes)
+    {
+        if (stop_requested())
+            return -ECANCELED;
+        size_t written = s->running ? Dmod_FileWrite((const uint8_t*)buffer + offset, 1, bytes - offset, s->node) : 0;
+        if (written > bytes - offset || written % s->device->frame_bytes != 0)
+            return -EIO;
+        if (written != 0)
+        {
+            offset += written;
+            continue;
+        }
+        if (restarts == WRITE_RESTARTS)
+        {
+            DMOD_LOG_ERROR("libdmaudio: %s: playback did not recover\n", s->device->name);
+            return -EIO;
+        }
+        restarts++;
+        DMOD_LOG_WARN("libdmaudio: %s: restarting stalled playback (%u/%u)\n",
+                      s->device->name, restarts, WRITE_RESTARTS);
+        int ret = restart_node(s, stop_requested);
+        if (ret != 0 && ret != -EIO)
+            return ret;
+    }
+    return 0;
+}
+
 /* The node configured with the options (if it is not fixed - @p fixed_ok: -ENOTSUP is a node with a
  * fixed format, not a refusal), the format it runs at */
 static int configure_node(void* node, const libdmaudio_serve_options_t* o, libdmaudio_format_t* format, bool fixed_ok)
@@ -306,13 +353,9 @@ dmod_libdmaudio_api_declaration(1.0, int, _serve, ( const char* name, const char
 
         int active = libdmaudio_device_mix(s.device, buffer, period);
         idle = (active > 0) ? 0 : idle + o.period_ms;
-        size_t written = Dmod_FileWrite(buffer, 1, bytes, s.node);
-        if (written != bytes)
-        {
-            DMOD_LOG_WARN("libdmaudio: %s took %lu of %lu bytes\n", name, (unsigned long)written, (unsigned long)bytes);
-            if (written == 0)
-                dmosi_thread_sleep(o.period_ms);    /* (the node is stuck: no busy loop) */
-        }
+        ret = write_period(&s, buffer, bytes, stop_requested);
+        if (ret != 0)
+            break;
         if (idle >= o.idle_ms)
             stop_node(&s);
     }
@@ -321,5 +364,5 @@ dmod_libdmaudio_api_declaration(1.0, int, _serve, ( const char* name, const char
     libdmaudio_device_unregister(s.device);
     Dmod_Free(buffer);
     Dmod_FileClose(s.node);
-    return 0;
+    return (ret == -ECANCELED) ? 0 : ret;
 }

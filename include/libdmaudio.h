@@ -139,7 +139,10 @@ dmod_libdmaudio_api(1.0, int, _serve_parse, ( int argc, char* argv[], libdmaudio
  * reports (DMDRVI_IOCTL_AUDIO_GET_STREAM). Then, a period at a time, the
  * streams are mixed and written to the node, whose DMA paces the loop.
  * After `idle_ms` with nothing to play the node is drained and stopped
- * until a stream has samples again.
+ * until a stream has samples again. Short writes finish the current period;
+ * a stalled write stops and restarts the node (up to three times, 100 ms
+ * apart), retrying the unwritten samples. A persistent failure returns -EIO.
+ * Frames already queued in the node may be lost during a restart.
  *
  * @param name           Device name the streams are opened with
  * @param node_path      Its audio node (e.g. "/dev/wm8994")
