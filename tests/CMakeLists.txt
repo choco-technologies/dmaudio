@@ -36,3 +36,15 @@ if(DMF_GET_EXECUTABLE AND DMOD_LOADER_EXECUTABLE)
 else()
     message(WARNING "dmf-get/dmod_loader not found - 'ctest' will not run ${DMOD_MODULE_NAME}. Build the tools first with -DDMOD_BUILD_TOOLS=ON")
 endif()
+
+# Host regression tests exercise the real service loop with a scripted node.
+# No module/runtime code is linked into the native test executable.
+if(DMOD_TOOLS_NAME STREQUAL "arch/x86_64")
+    add_executable(test_serve_recovery serve_recovery_test.c)
+    target_compile_definitions(test_serve_recovery PRIVATE
+        DMOD_libdmaudio DMOD_CURRENT_ALLOCATOR="test_serve_recovery")
+    get_target_property(LIBDMAUDIO_INCLUDES libdmaudio INCLUDE_DIRECTORIES)
+    target_include_directories(test_serve_recovery PRIVATE ${LIBDMAUDIO_INCLUDES})
+    target_link_libraries(test_serve_recovery PRIVATE libdmaudio_if dmod_inc)
+    add_test(NAME test_serve_recovery COMMAND test_serve_recovery)
+endif()
